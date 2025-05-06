@@ -149,7 +149,7 @@ export default function App() {
 
 La siguiente imagen/GIF muestra la escena jerárquica interactiva, donde al modificar los controles del nodo padre se observa cómo los hijos y nietos heredan las transformaciones:
 
-![threejs_jerarquia](./resultados/resultado.gif)
+![threejs_jerarquia](./threejs/resultados/resultado.gif)
 
 ---
 
