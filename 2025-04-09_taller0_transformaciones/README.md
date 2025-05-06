@@ -171,22 +171,17 @@ Enumera los prompts utilizados:
 "¿Cómo aplico matrices de transformación para animar un círculo en 2D?"
 "¿Cómo puedo animar la posición, rotación y escala de un mesh en React Three Fiber?"
 "¿Cómo sincronizo animaciones con el tiempo en Processing usando sin() y millis()?"
----
+
+
+
+```
 
 ## 💬 Reflexión Final
 
 Este taller me permitió comprender y aplicar de manera práctica los conceptos fundamentales de las transformaciones geométricas en computación visual. Reforcé el uso de matrices para manipular objetos y la importancia de animar parámetros en función del tiempo para lograr efectos visuales dinámicos. Además, pude comparar cómo se implementan estos conceptos en diferentes entornos y lenguajes, lo que amplió mi perspectiva sobre las herramientas disponibles para visualización y animación.
 
 La parte más interesante fue ver cómo una misma idea matemática se traduce en código en tecnologías tan distintas como Python, Processing o Three.js. El mayor reto fue sincronizar correctamente las animaciones y exportar los resultados como GIFs, especialmente en entornos donde no es una función nativa. Para futuros proyectos, buscaría automatizar aún más la exportación de resultados y explorar la integración de interactividad en tiempo real.
----
 
+```
 
-## ✅ Checklist de Entrega
-
-- [x] Carpeta `YYYY-MM-DD_nombre_taller`
-- [x] Código limpio y funcional
-- [x] GIF incluido con nombre descriptivo (si el taller lo requiere)
-- [x] Visualizaciones o métricas exportadas
-- [x] README completo y claro
-- [x] Commits descriptivos en inglés
 ```
