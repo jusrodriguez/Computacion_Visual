@@ -135,4 +135,10 @@ En la web, la visualización es completamente interactiva. El usuario puede rota
 
 ## 💬 Reflexión Final
 
-Este taller permitió comparar la facilidad y flexibilidad de trabajar con modelos 3D en Python y en la web usando Three.js. La visualización interactiva en el navegador resulta especialmente poderosa para explorar modelos complejos, mientras que Python facilita el análisis geométrico y la automatización de tareas.
+Con este taller reforcé mi comprensión sobre las estructuras fundamentales de los modelos 3D, como vértices, aristas y caras, y aprendí a manipular archivos STL en diferentes entornos. Pude comparar la facilidad de análisis geométrico en Python con la potencia de visualización interactiva que ofrece Three.js en la web. Además, entendí mejor cómo se organizan los proyectos de computación visual y la importancia de elegir la herramienta adecuada según el objetivo.
+
+La parte más interesante fue lograr la visualización interactiva en el navegador, permitiendo alternar entre modos de visualización y manipular la cámara en tiempo real. También resultó desafiante entender el flujo de datos entre los distintos formatos y adaptar el código para que funcionara correctamente en cada plataforma.
+
+En futuros proyectos, me gustaría profundizar en la optimización de la carga de modelos y explorar otros formatos como GLTF. Mejoraría la documentación del proceso y buscaría integrar análisis geométricos más avanzados directamente en la web, para aprovechar tanto la interactividad como el poder analítico en un solo entorno.
+
+---
