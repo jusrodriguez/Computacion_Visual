@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Three.js Model Viewer</title>
+
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <link href="https://fonts.googleapis.com/css?family=Titillium+Web" rel="stylesheet">
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link rel='stylesheet' href='css/spectrum.css' />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <link rel='stylesheet' href='css/main_style.css' />
+
+    <!--Three.js scripts-->
+    <script src="js/three.js"></script>
+
+    <script src="js/Projector.js"></script>
+    <script src="js/Detector.js"></script>
+
+    <script src="js/loaders/MTLLoader.js"></script>
+    <script src="js/loaders/OBJLoader.js"></script>
+    <script src="js/loaders/ColladaLoader.js"></script>
+    <script src="js/loaders/inflate.min.js"></script>
+    <script src="js/loaders/FBXLoader.js"></script>
+    <script src="js/loaders/GLTFLoader.js"></script>
+    <script src="js/loaders/STLLoader.js"></script>
+    <script src="js/loaders/DDSLoader.js"></script>
+
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/TransformControls.js"></script>
+
+    <script src="js/THREEx.FullScreen.js"></script>
+    <script src="js/THREEx.WindowResize.js"></script>
+    <script src="js/screenfull.min.js"></script>
+
+    <!--Post-Processing-->
+    <script src="js/effects/EffectComposer.js"></script>
+    <script src="js/effects/ShaderPass.js"></script>
+    <script src="js/effects/RenderPass.js"></script>
+    <script src="js/effects/CopyShader.js"></script>
+    <script src="js/effects/OutlinePass.js"></script>
+    <script src="js/effects/FXAAShader.js"></script>
+
+    <script src="js/jquery.nicescroll.js"></script>
+    <script src="js/spectrum.js"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+
+    <script>
+        $(function () {
+            $("#red, #green, #blue, #ambient_red, #ambient_green, #ambient_blue").slider({
+                orientation: "horizontal",
+                range: "min",
+                max: 255,
+                value: 127  //Default value, Light colour of model set to median value (grey colour)
+            });
+        }); 
+    </script>
+
+    <script id="vertexShader" type="x-shader/x-vertex">
+        uniform float p;
+        varying float intensity;
+        void main()
+        {
+           vec3 vNormal = normalize( normalMatrix * normal );
+           intensity = pow(1.0 - abs(dot(vNormal, vec3(0, 0, 1))), p);
+           gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        }
+    </script>
+
+    <script id="fragmentShader" type="x-shader/x-vertex">
+        uniform vec3 glowColor;
+        varying float intensity;
+        void main()
+        {
+           vec3 glow = glowColor * intensity;
+           gl_FragColor = vec4( glow, 1.0 );
+        }
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            $('#load_help').dialog({
+                autoOpen: false,
+                width: 667
+            }).css("font-size", "16px");
+
+            $('.qBtn').click(function () {
+                $('#load_help').dialog('open');
+            });
+        });
+    </script>
+
+
+</head>
+
+<body>
+
+    <div id="container">
+        <div id="stats"></div>
+
+        <!-- Botones de colapsar menu -->
+        <button id="collapse_side" title="Colapsar menu lateral">&larr;</button>
+        <button id="collapse_btm" title="Colapsar menu inferior">&darr;</button>
+
+        <!-- Side Menu Start-->
+        <div class="side_menu">
+            <ul class="menu_item">
+
+                <li id="header">
+                    <table style="width:100%">
+                        <tr>
+                            <!-- Título y temas -->
+                            <th style="font-size: 15px;">Tema del visor</th>
+                            <th style="font-size: 11px;"><button id="lightSkin">Claro</button></th>
+                            <th style="font-size: 11px;"><button id="darkSkin">Oscuro</button></th>
+                        </tr>
+                    </table>
+                </li>
+
+                <li class='dropdown'>
+                    <!-- Menú de iluminación -->
+                    <a href='#'><img src="images/dir_light_icon.png" class="image" /> Iluminacion</a>
+                    <ul>
+                        <li><span>Luz ambiental</span></li>
+                        <li>
+                            <label class="switch">
+                                <input class="check" type="checkbox" id="ambient_light">
+                                <span class="toggle round"></span>
+                            </label>
+                        </li>
+                        <li><span>Color de luz ambiental</span></li>
+                        <li><span style="font-size: 12px">R</span></li>
+                        <li><div id="ambient_red"></div></li>
+                        <li><span style="font-size: 12px">G</span></li>
+                        <li><div id="ambient_green"></div></li>
+                        <li><span style="font-size: 12px">B</span></li>
+                        <li><div id="ambient_blue"></div></li>
+
+                        <li><hr style="margin-top:15px"/></li>
+                        <li>Color de luz direccional</li>                 
+                            <li><span style="font-size: 12px">R</span></li>
+                            <li><div id="red"></div></li>
+                            <li><span style="font-size: 12px">G</span></li>
+                            <li><div id="green"></div></li>
+                            <li><span style="font-size: 12px">B</span></li>
+                            <li><div id="blue"></div></li>                           
+                        
+                            <li><hr style="margin-top:15px" /></li>
+                            <li>Intensidad de luz puntual</li>
+                            <li><span style="font-size: 12px">Valor de intensidad</span></li>
+                            <li><div id="point_light"></div></li>   
+                    </ul>                   
+                </li>
+
+
+                <li class='dropdown'>
+                    <a href='#'><img src="images/wireframe_cube.png" class="image" />Vista de Alambre</a>
+                    <ul>
+                        <li><span>Alambre</span></li>
+                        <li>
+                            <label class="switch">
+                                <input class="check" type="checkbox" name="mod_mat" id="wire_check">
+                                <span class="toggle round"></span>
+                            </label>
+                        </li>
+                        <li><span>Modelo + Alambre</span></li>
+                        <li>
+                            <label class="switch">
+                                <input class="check" type="checkbox" name="mod_mat" id="model_wire">
+                                <span class="toggle round"></span>
+                            </label>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class='dropdown'>
+                    <a href='#'><img src="images/phong_icon.png" class="image" />Sombreado Phong</a>
+                    <ul>
+                        <li> <span>Sombreado Phong</span></li>
+
+                        <li>
+                            <label class="switch">
+                                <input class="check" type="checkbox" name="mod_phong" id="phong_check">
+                                <span class="toggle round"></span>
+                            </label>
+                        </li>
+
+                        <li><span style="font-size: 12px">Brillo</span></li>
+                        <li><div id="shine"></div></li>
+                    </ul>
+                </li>
+
+                <li class='dropdown'>
+                    <a href='#'><img src="images/XRay.png" class="image" />Sombreado Rayos X</a>
+                    <ul>
+                        <li> <span>Rayos X</span></li>
+                        <li>
+                            <label class="switch">
+                                <input class="check" type="checkbox" name="mod_xray" id="xray_check">
+                                <span class="toggle round"></span>
+                            </label>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class='dropdown'>
+                    <a href='#'><img src="images/glowing.png" width="32" height="32" class="image" />Contorno Brillante</a>
+                    <ul>
+                        <li> <span>Contorno Brillante</span></li>
+                        <li>
+                            <label class="switch">
+                                <input class="check" type="checkbox" name="mod_mat" id="glow_check">
+                                <span class="toggle round"></span>
+                            </label>
+                        </li>
+
+                        <li><span style="font-size: 12px">Intensidad del borde</span></li>
+                        <li><div id="edgeStrength"></div></li>
+
+                        <li> <span>Establecer color de resplandor</span></li>
+                        <li><input type='text' class="glow_select" /></li>
+                        <li><em id='basic-log'></em></li>
+                    </ul>
+                </li>
+
+                <li class='dropdown'>
+                    <a href='#'><img src="images/smoothed.png" width="32" height="32" class="image" />Suavizar modelo</a>
+                    <ul>
+                        <li> <span id="smooth-model" style="font-size:18px">Suavizar modelo</span></li>
+                        <li>
+                            <label class="switch">
+                                <input type="checkbox" id="smooth">
+                                <span class="toggle round"></span>
+                            </label>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class='dropdown'>
+                    <a href='#'><img src="images/colour_pick.png" class="image" />Establecer fondo</a>
+                    <ul>
+                        <li> <span>Establecer color de fondo</span></li>
+                        <li><input type='text' class="bg_select" /></li>
+                        <li><em id='basic_log'></em></li>
+                    </ul>
+                </li>
+
+                <li class='dropdown'>
+                    <!-- Menú de carga de modelos -->
+                    <a href='#'><img src="images/folder_icon.png" class="image" />Seleccionar/Arrastrar archivo de modelo</a>
+                    <ul>
+                        <li style="background: #d9d9f2; color: black; text-align: center">Selecciona desde el boton o arrastra el modelo al visor</li>
+
+                        <li style="margin-top: 12px; margin-bottom: 16px;">
+                             <label for="obj_file" class="model-upload">
+                                 <i style="margin-right: 5px;" class="fa fa-upload"></i> Cargar modelo 
+                            </label>
+                            <button class="qBtn" id="q_btn" title="Ayuda para cargar modelos"><i class="fa fa-question-circle q_mark"></i></button>
+                        </li>                  
+                        <li><input onclick="this.value=null;" type="file" id="obj_file" /></li>                       
+
+                        <li style="margin-top: 12px; margin-bottom: 16px;">
+                            <label for="modelPlusTexture" class="model-upload">
+                                <i style="margin-right: 5px;" class="fa fa-upload"></i> Modelo y texturas
+                            </label>                          
+                        </li>         
+                        <li><input id="modelPlusTexture" type="file" name="files[]" multiple="" class="model-upload"></li>
+
+                        <li><button type="button" id="remove"><i style="margin-right: 5px;" class="fa fa-trash"></i> Quitar archivo</button></li>
+                        <li><output id="result" /></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div id="load_help" title="Cargar modelos">
+                <p>Localiza el archivo de modelo que deseas visualizar. Se admiten texturas/imagenes asociadas a los modelos
+                   (.obj, .gltf, .fbx y .dae), asegurate de que las imagenes y el archivo del modelo esten en la misma carpeta
+                   en tu equipo.
+                </p>
+                <h4>Tipos de archivo soportados</h4>
+                <ul>
+                    <li><span style="color: green">.obj (+ .mtl)</span></li>
+                    <li><span style="color: green">.stl</span></li>
+                    <li><span style="color: green">.dae (Collada)</span></li>
+                    <li><span style="color: green">.glTF</span></li>
+                    <li><span style="color: green">.FBX</span></li>
+                </ul>
+                <p>
+                    <h4>Tamanos de modelo</h4>
+                    <hr />
+                    Algunos modelos pueden estar fuera de la vista de la camara al cargar. Prueba usar la rueda del raton y los
+                    botones de aumentar/disminuir escala para ver si el modelo aparece en pantalla.
+                </p>
+                <p>
+                    <h4>Rotacion de objeto</h4>
+                    <hr />
+                    Algunos modelos se cargan con un eje vertical diferente, dependiendo del software usado para crearlos.
+                    La seccion de rotacion contiene botones de radio para rotar el modelo en las direcciones x, y o z
+                    para corregir la orientacion y visualizar tu modelo. Normalmente la rotacion en el <b>eje X</b> es la necesaria.
+                </p>
+                <p>
+                    <h4>El modelo se carga en negro</h4>
+                    <hr />
+                    Algunos modelos pueden cargarse en negro, prueba usar la casilla de suavizar modelo para calcular las normales de vertices y caras.
+                </p>   
+            </div>
+
+            <div id="disp_tmp_path"></div>
+
+        </div>
+        <!--Side Menu End-->
+
+        <!--Menú inferior traducido-->
+        <div id="bottom_menu">
+            <ul class="bottom_menu_item">
+                <li class='dropdown'>
+                    <a href='#'><img src="images/rotation.png" class="image" />Rotacion del modelo</a>
+                    <ul>
+                        <li style="display:inline-block;  margin:0 35px 0 0;"><span>Auto rotar</span></li>
+                        <li style="display:inline-block">
+                            <span>Velocidad de rotacion</span>
+                            <span id="rot_slider"></span>
+                        </li>
+                        <li>
+                            <label class="switch">
+                                <input type="checkbox" id="rotation">
+                                <span class="toggle round"></span>
+                            </label>
+                        </li>
+                        <li>Corregir rotacion de modelos importados<hr style="margin-top:0px" /></li>
+
+                        <li>
+                            <div id="rotation">
+                                <div class="radioBtn">
+                                    <input type="radio" id="r1" name="rotate" value="rotateX"> Rotar X
+                                </div>  
+                                        
+                                <div class="radioBtn">
+                                    <input type="radio" id="r2" name="rotate" value="rotateY"> Rotar Y
+                                </div>  
+
+                                <div class="radioBtn">
+                                    <input type="radio" id="r3" name="rotate" value="rotateZ"> Rotar Z
+                                </div>                             
+                            </div>
+                        </li>
+
+                        <li><button class="resetRotateButton" type='reset' id="reset_rot">Restablecer</button></li>                     
+                    </ul>
+                </li>
+
+                <li class='dropdown'>
+                    <a href='#'><img src="images/scale.png" class="image" />Transformar modelo</a>
+                    <ul>
+                        <li style="margin-left:25px; font-size: 15px">
+                            <label for="transform">
+                                Activar controles de transformacion:
+                                <label class="switch helper">
+                                    <input type="checkbox" id="transform">
+                                    <span class="toggle grid round"></span>
+                                </label>
+                            </label>
+                        </li>
+                        <li id="transformKey">Presiona S: (Escalar), T: (Trasladar), R: (Rotar)</li>
+
+                        <li style="text-align:center; margin-top:8px;font-size: 15px">
+                            <span>Aumentar escala:</span> &nbsp;<button id="scale_up" style="margin:0 35px 0 0" type="button">+</button>
+                            <span>Disminuir escala:</span> &nbsp;<button id="scale_down" type="button">-</button>
+                        </li>
+                        
+                    </ul>
+                </li>
+
+                <li class='dropdown'>
+                    <a href='#'><img src="images/grid.png" class="image" />Ayudas de vista de modelo</a>
+                    <ul style="font-size: 13.5px">
+                        <li style="display:inline-block; margin:0 25px 0 0;">
+                            <span style="font-size:18px">Cuadricula</span>
+                            <label class="switch helper">
+                                <input type="checkbox" id="grid">
+                                <span class="toggle grid round"></span>
+                            </label>
+                        </li>
+                        <li style="display:inline-block; margin:0 25px 0 0;">
+                            <span style="font-size:18px">Cuadricula polar</span>
+                            <label class="switch helper">
+                                <input type="checkbox" id="polar_grid">
+                                <span class="toggle grid round"></span>
+                            </label>
+                        </li>
+                        <li style="display:inline-block; margin:0 25px 0 0;">
+                            <span style="font-size:18px">Ejes</span>
+                            <label class="switch helper">
+                                <input type="checkbox" id="axis">
+                                <span class="toggle grid round"></span>
+                            </label>
+                        </li>
+                        <li style="display:inline-block; margin:0 25px 0 0;">
+                            <span style="font-size:18px">Caja del modelo</span>
+                            <label class="switch helper">
+                                <input type="checkbox" id="bBox">
+                                <span class="toggle grid round"></span>
+                            </label>
+                        </li>
+                    </ul>
+                </li>
+            </ul>           
+        </div>
+        <!--Bottom Menu End-->
+
+        <div id="main_viewer"></div>
+
+        <!-- Botón pantalla completa -->
+        <div id="fullscreen">
+            <button id="fullscreenBtn" title="Modo pantalla completa" style="border: 0; float:right; background: transparent">
+                <img src="images/fullscreen.png" width="32" height="32" alt="pantalla completa" />
+            </button>
+        </div>
+
+        <!-- Selector de modelos de ejemplo traducido -->
+        <div id="sampleMods">
+            Modelos de ejemplo
+            <br />
+            <div class="select">
+                <select id="scenes_list" onchange="selectModel();">
+                    <option>Modelo Crash (165 KB)</option>
+                    <option>Modelo Oso (113 KB)</option>
+                    <option>Modelo Coche (1.33 MB)</option>
+                    <option>Modelo Tigre (3.77 MB)</option>
+                    <option>Modelo Dinosaurio (5.07 MB)</option>
+                    <option>Modelo Esqueleto (5.52 MB)</option>
+                </select>
+                <br /><br />
+            </div>
+        </div>
+
+        <!-- Selector de animaciones -->
+        <div id="anims">   
+            <span>Seleccionar animacion</span>
+            <div class="select">
+                <select id="animationSelect"></select>
+            </div>    
+            <br /> 
+            <button class="animBtn" id="play">Reproducir</button>
+            <button class="animBtn" id="stop">Detener</button>
+            <button class="animBtn" id="playAll">Reproducir todo</button>
+        </div>
+
+
+        <script src="js/menu.js"></script>
+        <script src="js/utils.js"></script>
+        <script src="js/main.js"></script>
+        <script src="js/userModelTextures.js"></script>
+        <script src="js/userModel.js"></script>     
+    </div>
+
+    <script src="js/ColourTheme.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $("html").niceScroll({ styler: "fb", cursorcolor: "#000" });
+            $("#stats").niceScroll({ horizrailenabled: false });
+        });
+    </script>
+
+</body>
+
+</html>
