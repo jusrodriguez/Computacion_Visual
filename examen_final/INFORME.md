@@ -69,11 +69,11 @@ graph TD
 
 A continuación se muestran GIFs animados que evidencian el funcionamiento de la herramienta:
 
-![Prueba 1](/resultados/prueba1.gif)
-![Prueba 2](/resultados/prueba3.gif)
-![Prueba 3](/resultados/prueba2.gif)
-![Prueba 4](/resultados/prueba4.gif)
-![Prueba 5](/resultados/prueba5.gif)
+![Prueba 1](resultados/prueba1.gif)
+![Prueba 2](resultados/prueba3.gif)
+![Prueba 3](resultados/prueba2.gif)
+![Prueba 4](resultados/prueba4.gif)
+![Prueba 5](resultados/prueba5.gif)
 
 ---
 
